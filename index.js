@@ -1,5 +1,39 @@
-function randomBetween(min, max) {
+  function randomBetween(min, max) {
     return Math.random() * (max - min) + min;
+  }
+
+  function createSnow() {
+    const snowContainer = document.createElement('div');
+    snowContainer.classList.add('snow-container');
+    document.body.appendChild(snowContainer);
+
+    function createSnowflake() {
+      const snowflake = document.createElement('div');
+      snowflake.classList.add('snowflake');
+      
+      const startX = Math.random() * window.innerWidth;
+      const delay = Math.random() * 10;
+      const size = Math.random() * 3 + 1;
+      
+      snowflake.style.left = `${startX}px`;
+      snowflake.style.width = `${size}px`;
+      snowflake.style.height = `${size}px`;
+      snowflake.style.animationDuration = `${randomBetween(10, 20)}s`;
+      snowflake.style.animationDelay = `-${delay}s`;
+      
+      snowContainer.appendChild(snowflake);
+      
+      // Remove snowflake after animation
+      snowflake.addEventListener('animationiteration', () => {
+        snowflake.remove();
+        createSnowflake();
+      });
+    }
+
+    // Create initial snowflakes
+    for (let i = 0; i < 100; i++) {
+      createSnowflake();
+    }
   }
 
   function animate() {
@@ -29,4 +63,7 @@ function randomBetween(min, max) {
     updatePosition();
   }
 
-  window.addEventListener('load', animate);
+  window.addEventListener('load', () => {
+    animate();
+    createSnow();
+  });
