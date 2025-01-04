@@ -1,82 +1,11 @@
 <html><head>
   <link rel="icon" type="image/png" href="/grin.png">
-  <meta property="og:image" content="/grin.jpg">
+  <meta property="og:image" content="/grin.png">
   <title>funne.xyz</title>
   <meta name="title" content="funne.xyz" />
   <meta name="description" content="grin." />
-<style>
-  body {
-    margin: 0;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: black;
-    overflow: hidden;
-  }
-
-  .floating-container {
-    transform-origin: center;
-    width: min(300px, 80vw);
-    height: min(300px, 80vw);
-  }
-
-  .glowing-image {
-    width: 100%;
-    height: 100%;
-    animation: pulse 2s ease-in-out infinite;
-    object-fit: cover;
-  }
-
-  @keyframes pulse {
-    0% {
-      filter: drop-shadow(0 0 5px rgba(255,0,0,0.6));
-      transform: scale(1);
-    }
-    50% {
-      filter: drop-shadow(0 0 20px rgba(255,0,0,0.8));
-      transform: scale(1.1);
-    }
-    100% {
-      filter: drop-shadow(0 0 5px rgba(255,0,0,0.6));
-      transform: scale(1);
-    }
-  }
-</style>
-<script>
-  function randomBetween(min, max) {
-    return Math.random() * (max - min) + min;
-  }
-
-  function animate() {
-    const container = document.querySelector('.floating-container');
-    let currentY = 0;
-    let currentRotation = 0;
-    
-    function updatePosition() {
-      const nextY = (Math.random() < 0.5) ? randomBetween(-30, -10) : randomBetween(10, 30);
-      const nextRotation = (Math.random() < 0.5) ? randomBetween(-10, -2) : randomBetween(2, 10);
-      
-      container.animate([
-        { transform: `translateY(${currentY}px) rotate(${currentRotation}deg)` },
-        { transform: `translateY(${nextY}px) rotate(${nextRotation}deg)` },
-        { transform: 'translateY(0px) rotate(0deg)' }
-      ], {
-        duration: 3000,
-        easing: 'ease-in-out',
-        fill: 'forwards'
-      }).onfinish = () => {
-        currentY = 0;
-        currentRotation = 0;
-        setTimeout(updatePosition, 100); 
-      };
-    }
-    
-    updatePosition();
-  }
-
-  window.addEventListener('load', animate);
-</script>
+  <link rel="stylesheet" href="/index.css">
+  <script src="/index.js"></script>
 </head>
 <body>
   <div class="floating-container">
