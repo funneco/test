@@ -11,8 +11,8 @@ body {
 
 .floating-container {
   transform-origin: center;
-  width: min(300px, 80vmin); 
-  height: min(300px, 80vmin); 
+  width: min(300px, 70vmin);
+  height: min(300px, 70vmin);
 }
 
 .glowing-image {
@@ -44,10 +44,10 @@ body {
 
 .corner-button {
   position: fixed;
-  top: 20px;
-  right: 20px;
-  width: 60px;
-  height: 60px;
+  top: 10px;
+  right: 10px;
+  width: 50px;
+  height: 50px;
   border: none;
   background: none;
   cursor: pointer;
@@ -110,5 +110,44 @@ body {
   .snowflake {
     width: 2px;
     height: 2px;
+  }
+  
+  .floating-container {
+    width: min(250px, 65vmin);
+    height: min(250px, 65vmin);
+  }
+
+  .corner-button {
+    width: 40px;
+    height: 40px;
+  }
+
+  @keyframes pulse {
+    0% {
+      filter: drop-shadow(0 0 3px rgba(255,0,0,0.6));
+      transform: scale(1);
+    }
+    50% {
+      filter: drop-shadow(0 0 15px rgba(255,0,0,0.8));
+      transform: scale(1.05);
+    }
+    100% {
+      filter: drop-shadow(0 0 3px rgba(255,0,0,0.6));
+      transform: scale(1);
+    }
+  }
+}
+
+@media (max-width: 320px) {
+  .floating-container {
+    width: min(200px, 60vmin);
+    height: min(200px, 60vmin);
+  }
+
+  .corner-button {
+    width: 35px;
+    height: 35px;
+    top: 5px;
+    right: 5px;
   }
 }
