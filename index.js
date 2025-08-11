@@ -197,6 +197,7 @@ async function playTrack(index, startTime = 0) {
   updateTrackTitle(track.title); // Now update to the actual track title.
 
   if (currentSource) {
+    currentSource.onended = null; // Clear the previous source's onended listener
     currentSource.stop();
     currentSource.disconnect();
     currentSource = null;
@@ -229,17 +230,16 @@ async function playTrack(index, startTime = 0) {
     updateProgressBar();
 
     currentSource.onended = () => {
-      // This `onended` fires when the track naturally finishes, or is stopped explicitly.
-      // We check if it ended naturally to avoid double-handling or resetting prematurely.
-      if (audioContext.currentTime - playbackStartTime >= currentTrackDuration - 0.1 && isPlaying) {
-        // If it ended naturally, updateProgressBar would have already handled state.
-        // This 'if' prevents resetting if it was manually stopped or a new track started.
-      } else if (!isPlaying) { // If it was stopped manually (e.g., by play/pause or changing track)
-        if (progressBarFill) progressBarFill.style.width = '0%'; // Reset bar
-        currentTrackDuration = 0;
-        playbackStartTime = 0;
-        currentPlaybackPosition = 0;
-        updateTimeDisplay(0,0);
+      // This listener fires when the audioBufferSourceNode finishes playing.
+      // It can be due to natural end or stop() call.
+      // We primarily rely on `updateProgressBar` for track completion and advancing to next track.
+      // If this fires due to manual stop, `currentPlaybackPosition` is already preserved
+      // and `onended` would have been cleared by `currentSource.onended = null;`.
+      // If it fires due to natural end, `updateProgressBar` should have already handled it.
+      // So, no complex state changes are needed here. Just disconnect the source if it's still active.
+      if (currentSource) { 
+          currentSource.disconnect();
+          currentSource = null; // Clear the reference
       }
     };
 
@@ -267,6 +267,7 @@ function togglePlayPause() {
 
   if (isPlaying) {
     if (currentSource) {
+      currentSource.onended = null; // Clear the current source's onended listener before stopping
       currentSource.stop(); // Stop current playback
       currentSource.disconnect();
       currentSource = null;
@@ -277,6 +278,7 @@ function togglePlayPause() {
       cancelAnimationFrame(animationFrameId);
       animationFrameId = null;
     }
+    // currentPlaybackPosition is maintained by updateProgressBar, no reset needed here.
   } else {
     // If resuming after a pause, restart from the currentPlaybackPosition
     playTrack(currentTrackIndex, currentPlaybackPosition);
