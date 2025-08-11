@@ -72,18 +72,17 @@ let playbackStartTime = 0;
 let animationFrameId = null;
 let currentPlaybackPosition = 0;
 
-const playPauseBtn = document.getElementById('play-pause-btn');
-const nextBtn = document.getElementById('next-btn');
-const prevBtn = document.getElementById('prev-btn');
-const trackTitleElement = document.getElementById('track-title');
-const progressBarContainer = document.getElementById('progress-bar-container');
-const progressBarFill = document.getElementById('progress-bar-fill');
-const currentTimeElement = document.getElementById('current-time');
-const totalTimeElement = document.getElementById('total-time'); 
-
-const audioPlayerContainer = document.getElementById('audio-player-container');
-const audioSymbol = document.getElementById('audio-symbol');
-const audioContent = document.getElementById('audio-content');
+let playPauseBtn;
+let nextBtn;
+let prevBtn;
+let trackTitleElement;
+let progressBarContainer;
+let progressBarFill;
+let currentTimeElement;
+let totalTimeElement;
+let audioPlayerContainer;
+let audioSymbol;
+let audioContent;
 
 async function initializeAudioContext() {
   if (!audioContext) {
@@ -97,21 +96,21 @@ async function loadAudioList() {
     tracks = await response.json();
     if (tracks.length > 0) {
       updateTrackTitle(tracks[currentTrackIndex].title);
-      updateTimeDisplay(0, 0);
+      updateTimeDisplay(0, 0); // Initialize time display
     } else {
       updateTrackTitle("No tracks available");
-      updateTimeDisplay(0, 0);
-      playPauseBtn.disabled = true;
-      nextBtn.disabled = true;
-      prevBtn.disabled = true;
+      updateTimeDisplay(0, 0); // Reset time display
+      if (playPauseBtn) playPauseBtn.disabled = true;
+      if (nextBtn) nextBtn.disabled = true;
+      if (prevBtn) prevBtn.disabled = true;
     }
   } catch (error) {
     console.error('Failed to load audio list:', error);
     updateTrackTitle("Error loading tracks");
-    updateTimeDisplay(0, 0);
-    playPauseBtn.disabled = true;
-    nextBtn.disabled = true;
-    prevBtn.disabled = true;
+    updateTimeDisplay(0, 0); // Reset time display
+    if (playPauseBtn) playPauseBtn.disabled = true;
+    if (nextBtn) nextBtn.disabled = true;
+    if (prevBtn) prevBtn.disabled = true;
   }
 }
 
@@ -123,8 +122,8 @@ function formatTime(seconds) {
 }
 
 function updateTimeDisplay(currentTime, totalDuration) {
-  currentTimeElement.textContent = formatTime(currentTime);
-  totalTimeElement.textContent = formatTime(totalDuration);
+  if (currentTimeElement) currentTimeElement.textContent = formatTime(currentTime);
+  if (totalTimeElement) totalTimeElement.textContent = formatTime(totalDuration);
 }
 
 function updateProgressBar() {
@@ -137,27 +136,28 @@ function updateProgressBar() {
   }
 
   const elapsed = audioContext.currentTime - playbackStartTime;
-  currentPlaybackPosition = elapsed;
+  currentPlaybackPosition = elapsed; // Update current playback position
 
-  const progress = Math.min(1, elapsed / currentTrackDuration);
+  const progress = Math.min(1, elapsed / currentTrackDuration); // Ensure progress doesn't exceed 1
 
-  progressBarFill.style.width = `${progress * 100}%`;
-  updateTimeDisplay(elapsed, currentTrackDuration);
+  if (progressBarFill) progressBarFill.style.width = `${progress * 100}%`;
+  updateTimeDisplay(elapsed, currentTrackDuration); // Update time display
 
   if (progress < 1) {
     animationFrameId = requestAnimationFrame(updateProgressBar);
   } else {
     // Track finished playing naturally
-    progressBarFill.style.width = '100%';
-    updateTimeDisplay(currentTrackDuration, currentTrackDuration);
+    if (progressBarFill) progressBarFill.style.width = '100%';
+    updateTimeDisplay(currentTrackDuration, currentTrackDuration); // Set to full duration
     cancelAnimationFrame(animationFrameId);
     animationFrameId = null;
     isPlaying = false;
-    playPauseBtn.textContent = '►';
-    progressBarFill.style.width = '0%';
+    if (playPauseBtn) playPauseBtn.textContent = '►'; // Change to Play symbol
+    if (progressBarFill) progressBarFill.style.width = '0%'; // Reset bar
     currentTrackDuration = 0;
     playbackStartTime = 0;
     currentPlaybackPosition = 0;
+    // Advance to next track automatically
     nextTrack();
   }
 }
@@ -165,7 +165,7 @@ function updateProgressBar() {
 async function playTrack(index, startTime = 0) {
   if (tracks.length === 0) return;
 
-  await initializeAudioContext(); 
+  await initializeAudioContext(); // Ensure context is initialized on user gesture
 
   // If context is suspended, try to resume it
   if (audioContext.state === 'suspended') {
@@ -192,9 +192,9 @@ async function playTrack(index, startTime = 0) {
     const arrayBuffer = await response.arrayBuffer();
     const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
-    currentTrackDuration = audioBuffer.duration;
-    playbackStartTime = audioContext.currentTime - startTime;
-    currentPlaybackPosition = startTime; 
+    currentTrackDuration = audioBuffer.duration; // Store duration
+    playbackStartTime = audioContext.currentTime - startTime; // Calculate actual start time in context
+    currentPlaybackPosition = startTime; // Set current position for display
 
     currentSource = audioContext.createBufferSource();
     currentSource.buffer = audioBuffer;
@@ -202,8 +202,9 @@ async function playTrack(index, startTime = 0) {
     currentSource.start(0, startTime); 
 
     isPlaying = true;
-    playPauseBtn.textContent = '❚❚';
+    if (playPauseBtn) playPauseBtn.textContent = '❚❚'; // Change to Pause symbol
     
+    // Start progress bar and time update
     updateProgressBar();
 
     currentSource.onended = () => {
@@ -212,8 +213,8 @@ async function playTrack(index, startTime = 0) {
       if (audioContext.currentTime - playbackStartTime >= currentTrackDuration - 0.1 && isPlaying) {
         // If it ended naturally, updateProgressBar would have already handled state.
         // This 'if' prevents resetting if it was manually stopped or a new track started.
-      } else if (!isPlaying) { 
-        progressBarFill.style.width = '0%';
+      } else if (!isPlaying) { // If it was stopped manually (e.g., by play/pause or changing track)
+        if (progressBarFill) progressBarFill.style.width = '0%'; // Reset bar
         currentTrackDuration = 0;
         playbackStartTime = 0;
         currentPlaybackPosition = 0;
@@ -224,9 +225,9 @@ async function playTrack(index, startTime = 0) {
   } catch (error) {
     console.error('Error playing track:', track.url, error);
     isPlaying = false;
-    playPauseBtn.textContent = '►';
+    if (playPauseBtn) playPauseBtn.textContent = '►'; // Change to Play symbol
     updateTrackTitle("Error: " + track.title);
-    progressBarFill.style.width = '0%';
+    if (progressBarFill) progressBarFill.style.width = '0%'; // Reset bar on error
     currentTrackDuration = 0;
     playbackStartTime = 0;
     currentPlaybackPosition = 0;
@@ -237,12 +238,12 @@ async function playTrack(index, startTime = 0) {
 function togglePlayPause() {
   if (isPlaying) {
     if (currentSource) {
-      currentSource.stop();
+      currentSource.stop(); // Stop current playback
       currentSource.disconnect();
       currentSource = null;
     }
     isPlaying = false;
-    playPauseBtn.textContent = '►';
+    if (playPauseBtn) playPauseBtn.textContent = '►'; // Change to Play symbol
     if (animationFrameId) {
       cancelAnimationFrame(animationFrameId);
       animationFrameId = null;
@@ -264,10 +265,26 @@ function prevTrack() {
 }
 
 function updateTrackTitle(title) {
-  trackTitleElement.textContent = title;
+  if (trackTitleElement) { // Add a check to ensure the element exists
+    trackTitleElement.textContent = title;
+  }
 }
 
 window.addEventListener('load', async () => {
+  // Assign DOM elements once the page is fully loaded
+  playPauseBtn = document.getElementById('play-pause-btn');
+  nextBtn = document.getElementById('next-btn');
+  prevBtn = document.getElementById('prev-btn');
+  trackTitleElement = document.getElementById('track-title');
+  progressBarContainer = document.getElementById('progress-bar-container');
+  progressBarFill = document.getElementById('progress-bar-fill');
+  currentTimeElement = document.getElementById('current-time');
+  totalTimeElement = document.getElementById('total-time');
+  audioPlayerContainer = document.getElementById('audio-player-container');
+  audioSymbol = document.getElementById('audio-symbol');
+  audioContent = document.getElementById('audio-content');
+
+  
   animate();
   //createSnow();
 
@@ -294,9 +311,9 @@ window.addEventListener('load', async () => {
     audioPlayerContainer.classList.remove('expanded');
   });
 
-  playPauseBtn.addEventListener('click', togglePlayPause);
-  nextBtn.addEventListener('click', nextTrack);
-  prevBtn.addEventListener('click', prevTrack);
+  if (playPauseBtn) playPauseBtn.addEventListener('click', togglePlayPause);
+  if (nextBtn) nextBtn.addEventListener('click', nextTrack);
+  if (prevBtn) prevBtn.addEventListener('click', prevTrack);
 });
 
 //window.addEventListener('load', () => {
