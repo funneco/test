@@ -71,6 +71,7 @@ let currentTrackDuration = 0;
 let playbackStartTime = 0;
 let animationFrameId = null;
 let currentPlaybackPosition = 0;
+let initialInteractionHandled = false;
 
 let playPauseBtn;
 let nextBtn;
@@ -95,8 +96,15 @@ async function loadAudioList() {
     const response = await fetch('/audio_list.json');
     tracks = await response.json();
     if (tracks.length > 0) {
-      updateTrackTitle(tracks[currentTrackIndex].title);
+      // Randomly pick an initial track
+      currentTrackIndex = Math.floor(Math.random() * tracks.length);
+      // Set initial message for the user to trigger playback
+      updateTrackTitle("Click to Play");
       updateTimeDisplay(0, 0); // Initialize time display
+      // Ensure buttons are enabled if tracks exist, even if not playing yet
+      if (playPauseBtn) playPauseBtn.disabled = false;
+      if (nextBtn) nextBtn.disabled = false;
+      if (prevBtn) prevBtn.disabled = false;
     } else {
       updateTrackTitle("No tracks available");
       updateTimeDisplay(0, 0); // Reset time display
@@ -165,12 +173,28 @@ function updateProgressBar() {
 async function playTrack(index, startTime = 0) {
   if (tracks.length === 0) return;
 
-  await initializeAudioContext(); // Ensure context is initialized on user gesture
+  await initializeAudioContext(); // Ensure context is initialized
 
-  // If context is suspended, try to resume it
+  // Attempt to resume audio context if suspended. This is crucial for autoplay policies.
   if (audioContext.state === 'suspended') {
-    await audioContext.resume();
+    try {
+      await audioContext.resume();
+      console.log("AudioContext resumed during playTrack call.");
+    } catch (e) {
+      console.warn("Failed to resume AudioContext. User interaction might still be needed.", e);
+      // If resume fails, it means no valid user gesture yet.
+      // Do not proceed with playback and keep UI in a paused/waiting state.
+      isPlaying = false;
+      if (playPauseBtn) playPauseBtn.textContent = '►';
+      updateTrackTitle("Click to Play"); // Revert or ensure message
+      return;
+    }
   }
+
+  // If we reach here, context is running. Mark initial interaction as handled.
+  initialInteractionHandled = true;
+  const track = tracks[index];
+  updateTrackTitle(track.title); // Now update to the actual track title.
 
   if (currentSource) {
     currentSource.stop();
@@ -184,9 +208,6 @@ async function playTrack(index, startTime = 0) {
     animationFrameId = null;
   }
 
-  const track = tracks[index];
-  updateTrackTitle(track.title);
-
   try {
     const response = await fetch(track.url);
     const arrayBuffer = await response.arrayBuffer();
@@ -199,11 +220,11 @@ async function playTrack(index, startTime = 0) {
     currentSource = audioContext.createBufferSource();
     currentSource.buffer = audioBuffer;
     currentSource.connect(audioContext.destination);
-    currentSource.start(0, startTime); 
+    currentSource.start(0, startTime);
 
     isPlaying = true;
     if (playPauseBtn) playPauseBtn.textContent = '❚❚'; // Change to Pause symbol
-    
+
     // Start progress bar and time update
     updateProgressBar();
 
@@ -236,6 +257,14 @@ async function playTrack(index, startTime = 0) {
 }
 
 function togglePlayPause() {
+  if (tracks.length === 0) return; // Prevent action if no tracks loaded
+
+  if (!initialInteractionHandled) {
+    // If user clicks play/pause button first, trigger the initial interaction handler
+    handleFirstInteraction();
+    return;
+  }
+
   if (isPlaying) {
     if (currentSource) {
       currentSource.stop(); // Stop current playback
@@ -250,17 +279,23 @@ function togglePlayPause() {
     }
   } else {
     // If resuming after a pause, restart from the currentPlaybackPosition
-    playTrack(currentTrackIndex, currentPlaybackPosition); 
+    playTrack(currentTrackIndex, currentPlaybackPosition);
   }
 }
 
 function nextTrack() {
+  if (tracks.length === 0) return;
   currentTrackIndex = (currentTrackIndex + 1) % tracks.length;
+  // If not yet playing (due to autoplay policy), this still counts as interaction
+  // and should initiate play.
   playTrack(currentTrackIndex);
 }
 
 function prevTrack() {
+  if (tracks.length === 0) return;
   currentTrackIndex = (currentTrackIndex - 1 + tracks.length) % tracks.length;
+  // If not yet playing (due to autoplay policy), this still counts as interaction
+  // and should initiate play.
   playTrack(currentTrackIndex);
 }
 
@@ -268,6 +303,42 @@ function updateTrackTitle(title) {
   if (trackTitleElement) { // Add a check to ensure the element exists
     trackTitleElement.textContent = title;
   }
+}
+
+// Function to handle the very first user interaction that allows audio to play
+// This listens for any click or keydown on the document.
+async function handleFirstInteraction() {
+  if (initialInteractionHandled) return; // Ensure this only runs once
+
+  console.log("First user interaction detected.");
+
+  await initializeAudioContext(); // Ensure audioContext exists
+
+  if (audioContext.state === 'suspended') {
+    try {
+      await audioContext.resume();
+      console.log("AudioContext resumed by global interaction.");
+    } catch (e) {
+      console.error("Failed to resume AudioContext on first interaction:", e);
+      // If resume still fails (e.g., due to strict security settings),
+      // we might not be able to play audio automatically.
+      return; // Do not proceed if context couldn't be resumed
+    }
+  }
+
+  // Once audio context is running, proceed to play the track
+  if (tracks.length > 0) {
+    playTrack(currentTrackIndex);
+  } else {
+    console.warn("No tracks loaded after first interaction.");
+  }
+
+  // Mark that the initial interaction has been handled
+  initialInteractionHandled = true;
+
+  // Remove the one-time event listeners
+  document.removeEventListener('click', handleFirstInteraction);
+  document.removeEventListener('keydown', handleFirstInteraction);
 }
 
 window.addEventListener('load', async () => {
@@ -290,30 +361,38 @@ window.addEventListener('load', async () => {
 
   // Initialize audio player
   await loadAudioList();
-  
-  // Autoplay the first track if available
-  if (tracks.length > 0) {
-    playTrack(currentTrackIndex);
-  }
+
+  // Initially ensure play button shows play symbol and isPlaying is false
+  if (playPauseBtn) playPauseBtn.textContent = '►';
+  isPlaying = false;
 
   // Auto-expand on load, then condense after a delay
-  audioPlayerContainer.classList.add('expanded');
-  setTimeout(() => {
-    audioPlayerContainer.classList.remove('expanded');
-  }, 3000);
-
-  // Add event listeners for hover to toggle player expansion
-  audioPlayerContainer.addEventListener('mouseenter', () => {
+  if (audioPlayerContainer) {
     audioPlayerContainer.classList.add('expanded');
-  });
+    setTimeout(() => {
+      audioPlayerContainer.classList.remove('expanded');
+    }, 2000);
 
-  audioPlayerContainer.addEventListener('mouseleave', () => {
-    audioPlayerContainer.classList.remove('expanded');
-  });
+    // Add event listeners for hover to toggle player expansion
+    audioPlayerContainer.addEventListener('mouseenter', () => {
+      audioPlayerContainer.classList.add('expanded');
+    });
 
+    audioPlayerContainer.addEventListener('mouseleave', () => {
+      audioPlayerContainer.classList.remove('expanded');
+    });
+  }
+
+  // Add event listeners for controls. These will now trigger handleFirstInteraction
+  // if initialInteractionHandled is false.
   if (playPauseBtn) playPauseBtn.addEventListener('click', togglePlayPause);
   if (nextBtn) nextBtn.addEventListener('click', nextTrack);
   if (prevBtn) prevBtn.addEventListener('click', prevTrack);
+
+  // Add global event listeners for any initial user interaction
+  // These will call handleFirstInteraction ONLY ONCE to enable audio.
+  document.addEventListener('click', handleFirstInteraction, { once: true });
+  document.addEventListener('keydown', handleFirstInteraction, { once: true });
 });
 
 //window.addEventListener('load', () => {
