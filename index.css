@@ -169,9 +169,10 @@ body {
 }
 
 .audio-player.expanded .track-info {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  word-break: break-word;
 }
 
 .audio-player.expanded .controls {
