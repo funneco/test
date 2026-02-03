@@ -1,20 +1,27 @@
 // js/game.js
 
-let gamesData = null;
-let currentGame = null;
-let emulatorLoaded = false;
-let rufflePlayer = null;
+var gamesData = null;
+var currentGame = null;
+var emulatorLoaded = false;
+var rufflePlayer = null;
 
 // Get game ID from URL
 function getGameIdFromUrl() {
-    const params = new URLSearchParams(window.location.search);
+    var params = new URLSearchParams(window.location.search);
     return params.get('game') || params.get('id');
+}
+
+// Escape HTML
+function escapeHtml(text) {
+    var div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // Load games data
 async function loadGamesData() {
     try {
-        const response = await fetch('data/games.json');
+        var response = await fetch('data/games.json');
         gamesData = await response.json();
         initializeDropdowns();
         loadGame();
@@ -25,22 +32,21 @@ async function loadGamesData() {
 }
 
 // Initialize dropdown menus
-// Initialize dropdown menus
 function initializeDropdowns() {
     // Games dropdown
-    const gamesDropdown = document.getElementById('games-dropdown');
+    var gamesDropdown = document.getElementById('games-dropdown');
     if (gamesDropdown) {
         gamesDropdown.innerHTML = '';
         
         // All Games link
-        const allItem = document.createElement('a');
+        var allItem = document.createElement('a');
         allItem.className = 'dropdown-item';
         allItem.textContent = 'All';
         allItem.href = '/';
         gamesDropdown.appendChild(allItem);
         
         // Categories link
-        const categoriesItem = document.createElement('a');
+        var categoriesItem = document.createElement('a');
         categoriesItem.className = 'dropdown-item';
         categoriesItem.textContent = 'Categories';
         categoriesItem.href = 'categories.html';
@@ -48,32 +54,58 @@ function initializeDropdowns() {
     }
     
     // More dropdown
-    const moreDropdown = document.getElementById('more-dropdown');
+    var moreDropdown = document.getElementById('more-dropdown');
     if (moreDropdown) {
         moreDropdown.innerHTML = '';
         
-        gamesData.moreLinks.forEach(function(link) {
-            const item = document.createElement('a');
+        for (var i = 0; i < gamesData.moreLinks.length; i++) {
+            var link = gamesData.moreLinks[i];
+            var item = document.createElement('a');
             item.className = 'dropdown-item';
             item.textContent = link.name;
             item.href = link.url;
-            if (link.url.startsWith('http')) {
+            if (link.url.indexOf('http') === 0) {
                 item.target = '_blank';
                 item.rel = 'noopener noreferrer';
             }
             moreDropdown.appendChild(item);
-        });
+        }
     }
 }
 
 // Find game by ID
 function findGameById(id) {
-    return gamesData.games.find(game => game.id.toLowerCase() === id.toLowerCase());
+    for (var i = 0; i < gamesData.games.length; i++) {
+        if (gamesData.games[i].id.toLowerCase() === id.toLowerCase()) {
+            return gamesData.games[i];
+        }
+    }
+    return null;
+}
+
+// Render game categories
+function renderGameCategories(categories) {
+    var container = document.getElementById('game-categories');
+    if (!container || !categories || categories.length === 0) {
+        return;
+    }
+    
+    container.innerHTML = '';
+    
+    for (var i = 0; i < categories.length; i++) {
+        var category = categories[i];
+        var tag = document.createElement('a');
+        tag.className = 'game-category-tag';
+        tag.href = '/?category=' + encodeURIComponent(category);
+        tag.title = 'View all ' + category + ' games';
+        tag.textContent = category;
+        container.appendChild(tag);
+    }
 }
 
 // Load the game based on URL parameter
 function loadGame() {
-    const gameId = getGameIdFromUrl();
+    var gameId = getGameIdFromUrl();
     
     if (!gameId) {
         showError('No game specified. Please select a game from the homepage.');
@@ -83,18 +115,21 @@ function loadGame() {
     currentGame = findGameById(gameId);
     
     if (!currentGame) {
-        showError(`Game "${gameId}" not found. Please check the URL or select a game from the homepage.`);
+        showError('Game "' + gameId + '" not found. Please check the URL or select a game from the homepage.');
         return;
     }
     
     // Update page title
-    document.title = `${currentGame.name} - moyaimoment`;
+    document.title = currentGame.name + ' - moyaimoment';
     
     // Update game info
     document.getElementById('game-title').textContent = currentGame.name;
-    document.getElementById('game-description').textContent = currentGame.description || '';
+    document.getElementById('game-description').textContent = currentGame.description || 'No description available.';
     document.getElementById('game-info-icon').src = currentGame.icon;
     document.getElementById('game-info-icon').alt = currentGame.name;
+    
+    // Render categories
+    renderGameCategories(currentGame.categories);
     
     // Hide loading, show game
     document.getElementById('loading-screen').style.display = 'none';
@@ -118,47 +153,40 @@ function loadGame() {
             loadHTML5Game(currentGame);
             break;
         default:
-            showError(`Unknown game type: ${currentGame.type}`);
+            showError('Unknown game type: ' + currentGame.type);
     }
     
     // Show controls help
     showControlsHelp(currentGame.type);
 }
 
-// Load Flash game with Ruffle - FIXED
+// Load Flash game with Ruffle
 function loadFlashGame(game) {
-    const container = document.getElementById('flash-container');
-    const gameContainer = document.getElementById('game-container');
-    const ruffleContainer = document.getElementById('ruffle-player');
+    var container = document.getElementById('flash-container');
+    var gameContainer = document.getElementById('game-container');
+    var ruffleContainer = document.getElementById('ruffle-player');
     
-    // Show container and set aspect ratio
     container.style.display = 'flex';
     gameContainer.classList.add('flash-aspect');
     
-    // Clear any existing content
     ruffleContainer.innerHTML = '';
     
-    // Check if Ruffle is available
     if (typeof window.RufflePlayer === 'undefined') {
         console.error('Ruffle is not loaded');
         showError('Flash player (Ruffle) failed to load. Please refresh the page.');
         return;
     }
     
-    // Wait a moment for the container to have dimensions
-    setTimeout(() => {
+    setTimeout(function() {
         try {
-            const ruffle = window.RufflePlayer.newest();
-            const player = ruffle.createPlayer();
+            var ruffle = window.RufflePlayer.newest();
+            var player = ruffle.createPlayer();
             
-            // Set player dimensions
             player.style.width = '100%';
             player.style.height = '100%';
             
-            // Add player to container
             ruffleContainer.appendChild(player);
             
-            // Configure and load the game
             player.load({
                 url: game.file,
                 autoplay: "on",
@@ -169,14 +197,13 @@ function loadFlashGame(game) {
                 contextMenu: "on",
                 preloader: true,
                 splashScreen: false
-            }).then(() => {
+            }).then(function() {
                 console.log('Flash game loaded successfully');
-            }).catch(error => {
+            }).catch(function(error) {
                 console.error('Error loading Flash game:', error);
                 showError('Failed to load Flash game. The file may be missing or corrupted.');
             });
             
-            // Store reference for cleanup
             rufflePlayer = player;
             
         } catch (error) {
@@ -188,18 +215,16 @@ function loadFlashGame(game) {
 
 // Load emulator game with EmulatorJS
 function loadEmulatorGame(game) {
-    const container = document.getElementById('gameboy-container');
-    const gameContainer = document.getElementById('game-container');
+    var container = document.getElementById('gameboy-container');
+    var gameContainer = document.getElementById('game-container');
     
     container.style.display = 'block';
     
-    // Set aspect ratio based on system
-    if (['gb', 'gbc', 'gba'].includes(game.type)) {
+    if (game.type === 'gb' || game.type === 'gbc' || game.type === 'gba') {
         gameContainer.classList.add('gameboy-aspect');
     }
     
-    // Map game type to EmulatorJS core
-    const coreMap = {
+    var coreMap = {
         'gb': 'gambatte',
         'gbc': 'gambatte',
         'gba': 'mgba',
@@ -209,13 +234,11 @@ function loadEmulatorGame(game) {
         'nds': 'melonds'
     };
     
-    const core = coreMap[game.type] || 'gambatte';
+    var core = coreMap[game.type] || 'gambatte';
     
-    // Clear any existing content
-    const emulatorContainer = document.getElementById('emulator-container');
+    var emulatorContainer = document.getElementById('emulator-container');
     emulatorContainer.innerHTML = '';
     
-    // Set up EmulatorJS
     window.EJS_player = '#emulator-container';
     window.EJS_core = core;
     window.EJS_gameUrl = game.file;
@@ -224,9 +247,8 @@ function loadEmulatorGame(game) {
     window.EJS_startOnLoaded = true;
     window.EJS_DEBUG_XX = false;
     
-    // Load EmulatorJS script dynamically
     if (!emulatorLoaded) {
-        const script = document.createElement('script');
+        var script = document.createElement('script');
         script.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
         script.async = true;
         document.body.appendChild(script);
@@ -236,97 +258,80 @@ function loadEmulatorGame(game) {
 
 // Load HTML5 game in iframe
 function loadHTML5Game(game) {
-    const container = document.getElementById('html5-container');
-    const iframe = document.getElementById('html5-frame');
+    var container = document.getElementById('html5-container');
+    var iframe = document.getElementById('html5-frame');
     
     container.style.display = 'block';
     iframe.src = game.file;
     
-    // Handle iframe load errors
-    iframe.onerror = () => {
+    iframe.onerror = function() {
         showError('Failed to load HTML5 game. The file may be missing.');
     };
 }
 
 // Show controls help based on game type
 function showControlsHelp(type) {
-    const controlsHelp = document.getElementById('controls-help');
+    var controlsHelp = document.getElementById('controls-help');
     
-    let controlsHTML = '<h3>Controls</h3><div class="controls-grid">';
+    var controlsHTML = '<h3>Controls</h3><div class="controls-grid">';
     
     switch (type) {
         case 'flash':
-            controlsHTML += `
-                <div class="control-item"><span class="key">Mouse</span><span>Interact</span></div>
-                <div class="control-item"><span class="key">Click</span><span>Select / Action</span></div>
-                <div class="control-item"><span class="key">Arrows</span><span>Move (if applicable)</span></div>
-                <div class="control-item"><span class="key">Space</span><span>Action (if applicable)</span></div>
-                <div class="control-item"><span class="key">Right Click</span><span>Ruffle Menu</span></div>
-            `;
+            controlsHTML += '<div class="control-item"><span class="key">Mouse</span><span>Interact</span></div>';
+            controlsHTML += '<div class="control-item"><span class="key">Click</span><span>Select / Action</span></div>';
+            controlsHTML += '<div class="control-item"><span class="key">Arrows</span><span>Move (if applicable)</span></div>';
+            controlsHTML += '<div class="control-item"><span class="key">Space</span><span>Action (if applicable)</span></div>';
+            controlsHTML += '<div class="control-item"><span class="key">Right Click</span><span>Ruffle Menu</span></div>';
             break;
         case 'gb':
         case 'gbc':
-            controlsHTML += `
-                <div class="control-item"><span class="key">Arrow Keys</span><span>D-Pad</span></div>
-                <div class="control-item"><span class="key">Z</span><span>A Button</span></div>
-                <div class="control-item"><span class="key">X</span><span>B Button</span></div>
-                <div class="control-item"><span class="key">Enter</span><span>Start</span></div>
-                <div class="control-item"><span class="key">Shift</span><span>Select</span></div>
-            `;
+            controlsHTML += '<div class="control-item"><span class="key">Arrow Keys</span><span>D-Pad</span></div>';
+            controlsHTML += '<div class="control-item"><span class="key">Z</span><span>A Button</span></div>';
+            controlsHTML += '<div class="control-item"><span class="key">X</span><span>B Button</span></div>';
+            controlsHTML += '<div class="control-item"><span class="key">Enter</span><span>Start</span></div>';
+            controlsHTML += '<div class="control-item"><span class="key">Shift</span><span>Select</span></div>';
             break;
         case 'gba':
-            controlsHTML += `
-                <div class="control-item"><span class="key">Arrow Keys</span><span>D-Pad</span></div>
-                <div class="control-item"><span class="key">Z</span><span>A Button</span></div>
-                <div class="control-item"><span class="key">X</span><span>B Button</span></div>
-                <div class="control-item"><span class="key">A</span><span>L Button</span></div>
-                <div class="control-item"><span class="key">S</span><span>R Button</span></div>
-                <div class="control-item"><span class="key">Enter</span><span>Start</span></div>
-                <div class="control-item"><span class="key">Shift</span><span>Select</span></div>
-            `;
+            controlsHTML += '<div class="control-item"><span class="key">Arrow Keys</span><span>D-Pad</span></div>';
+            controlsHTML += '<div class="control-item"><span class="key">Z</span><span>A Button</span></div>';
+            controlsHTML += '<div class="control-item"><span class="key">X</span><span>B Button</span></div>';
+            controlsHTML += '<div class="control-item"><span class="key">A</span><span>L Button</span></div>';
+            controlsHTML += '<div class="control-item"><span class="key">S</span><span>R Button</span></div>';
+            controlsHTML += '<div class="control-item"><span class="key">Enter</span><span>Start</span></div>';
+            controlsHTML += '<div class="control-item"><span class="key">Shift</span><span>Select</span></div>';
             break;
         case 'nes':
-            controlsHTML += `
-                <div class="control-item"><span class="key">Arrow Keys</span><span>D-Pad</span></div>
-                <div class="control-item"><span class="key">Z</span><span>A Button</span></div>
-                <div class="control-item"><span class="key">X</span><span>B Button</span></div>
-                <div class="control-item"><span class="key">Enter</span><span>Start</span></div>
-                <div class="control-item"><span class="key">Shift</span><span>Select</span></div>
-            `;
+            controlsHTML += '<div class="control-item"><span class="key">Arrow Keys</span><span>D-Pad</span></div>';
+            controlsHTML += '<div class="control-item"><span class="key">Z</span><span>A Button</span></div>';
+            controlsHTML += '<div class="control-item"><span class="key">X</span><span>B Button</span></div>';
+            controlsHTML += '<div class="control-item"><span class="key">Enter</span><span>Start</span></div>';
+            controlsHTML += '<div class="control-item"><span class="key">Shift</span><span>Select</span></div>';
             break;
         case 'snes':
-            controlsHTML += `
-                <div class="control-item"><span class="key">Arrow Keys</span><span>D-Pad</span></div>
-                <div class="control-item"><span class="key">Z</span><span>A Button</span></div>
-                <div class="control-item"><span class="key">X</span><span>B Button</span></div>
-                <div class="control-item"><span class="key">A</span><span>Y Button</span></div>
-                <div class="control-item"><span class="key">S</span><span>X Button</span></div>
-                <div class="control-item"><span class="key">Q</span><span>L Button</span></div>
-                <div class="control-item"><span class="key">W</span><span>R Button</span></div>
-                <div class="control-item"><span class="key">Enter</span><span>Start</span></div>
-            `;
+            controlsHTML += '<div class="control-item"><span class="key">Arrow Keys</span><span>D-Pad</span></div>';
+            controlsHTML += '<div class="control-item"><span class="key">Z</span><span>A Button</span></div>';
+            controlsHTML += '<div class="control-item"><span class="key">X</span><span>B Button</span></div>';
+            controlsHTML += '<div class="control-item"><span class="key">A</span><span>Y Button</span></div>';
+            controlsHTML += '<div class="control-item"><span class="key">S</span><span>X Button</span></div>';
+            controlsHTML += '<div class="control-item"><span class="key">Q</span><span>L Button</span></div>';
+            controlsHTML += '<div class="control-item"><span class="key">W</span><span>R Button</span></div>';
+            controlsHTML += '<div class="control-item"><span class="key">Enter</span><span>Start</span></div>';
             break;
         case 'n64':
-            controlsHTML += `
-                <div class="control-item"><span class="key">Arrow Keys</span><span>D-Pad</span></div>
-                <div class="control-item"><span class="key">I/J/K/L</span><span>C Buttons</span></div>
-                <div class="control-item"><span class="key">Z</span><span>A Button</span></div>
-                <div class="control-item"><span class="key">X</span><span>B Button</span></div>
-                <div class="control-item"><span class="key">C</span><span>Z Trigger</span></div>
-                <div class="control-item"><span class="key">Enter</span><span>Start</span></div>
-            `;
+            controlsHTML += '<div class="control-item"><span class="key">Arrow Keys</span><span>D-Pad</span></div>';
+            controlsHTML += '<div class="control-item"><span class="key">I/J/K/L</span><span>C Buttons</span></div>';
+            controlsHTML += '<div class="control-item"><span class="key">Z</span><span>A Button</span></div>';
+            controlsHTML += '<div class="control-item"><span class="key">X</span><span>B Button</span></div>';
+            controlsHTML += '<div class="control-item"><span class="key">C</span><span>Z Trigger</span></div>';
+            controlsHTML += '<div class="control-item"><span class="key">Enter</span><span>Start</span></div>';
             break;
         case 'html5':
-            controlsHTML += `
-                <div class="control-item"><span class="key">Varies</span><span>Controls depend on the game</span></div>
-                <div class="control-item"><span class="key">Arrow Keys</span><span>Usually movement</span></div>
-                <div class="control-item"><span class="key">Space</span><span>Usually jump/action</span></div>
-            `;
+            controlsHTML += '<div class="control-item"><span class="key">Varies</span><span>Controls depend on the game</span></div>';
+            controlsHTML += '<div class="control-item"><span class="key">Arrow Keys</span><span>Usually movement</span></div>';
+            controlsHTML += '<div class="control-item"><span class="key">Space</span><span>Usually jump/action</span></div>';
             break;
         default:
-            controlsHTML += `
-                <div class="control-item"><span class="key">Varies</span><span>See in-game instructions</span></div>
-            `;
+            controlsHTML += '<div class="control-item"><span class="key">Varies</span><span>See in-game instructions</span></div>';
     }
     
     controlsHTML += '</div>';
@@ -343,7 +348,7 @@ function showError(message) {
 
 // Fullscreen functionality
 function toggleFullscreen() {
-    const container = document.getElementById('game-container');
+    var container = document.getElementById('game-container');
     
     if (!document.fullscreenElement && !document.webkitFullscreenElement) {
         if (container.requestFullscreen) {
@@ -368,18 +373,19 @@ function toggleFullscreen() {
 function goToRandomGame() {
     if (!gamesData || gamesData.games.length === 0) return;
     
-    const randomIndex = Math.floor(Math.random() * gamesData.games.length);
-    const randomGame = gamesData.games[randomIndex];
-    window.location.href = `game.html?game=${randomGame.id}`;
+    var randomIndex = Math.floor(Math.random() * gamesData.games.length);
+    var randomGame = gamesData.games[randomIndex];
+    window.location.href = 'game.html?game=' + randomGame.id;
 }
 
 // Reset dropdowns
 function resetDropdowns() {
-    document.querySelectorAll('.dropdown-menu').forEach(menu => {
-        menu.style.opacity = '';
-        menu.style.visibility = '';
-        menu.style.transform = '';
-    });
+    var menus = document.querySelectorAll('.dropdown-menu');
+    for (var i = 0; i < menus.length; i++) {
+        menus[i].style.opacity = '';
+        menus[i].style.visibility = '';
+        menus[i].style.transform = '';
+    }
 }
 
 // Cleanup when leaving page
@@ -395,13 +401,10 @@ function cleanup() {
 }
 
 // Event listeners
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
     loadGamesData();
     
-    // Fullscreen button
     document.getElementById('fullscreen-btn').addEventListener('click', toggleFullscreen);
-    
-    // Random button
     document.getElementById('random-btn').addEventListener('click', goToRandomGame);
 });
 
@@ -410,21 +413,21 @@ window.addEventListener('beforeunload', cleanup);
 window.addEventListener('pagehide', cleanup);
 
 // Handle back/forward
-window.addEventListener('pageshow', (event) => {
+window.addEventListener('pageshow', function(event) {
     if (event.persisted) {
         resetDropdowns();
     }
 });
 
 // Close dropdowns when clicking outside
-document.addEventListener('click', (e) => {
+document.addEventListener('click', function(e) {
     if (!e.target.closest('.dropdown')) {
         resetDropdowns();
     }
 });
 
 // Keyboard shortcuts
-document.addEventListener('keydown', (e) => {
+document.addEventListener('keydown', function(e) {
     if (e.key === 'F11') {
         e.preventDefault();
         toggleFullscreen();
