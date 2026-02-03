@@ -119,15 +119,6 @@ function renderCategories() {
     html += '<div class="category-name">All Games</div>';
     html += '<div class="category-count">' + allCount + ' game' + (allCount !== 1 ? 's' : '') + '</div>';
     
-    for (var j = 0; j < Math.min(allPreview.length, 4); j++) {
-        var game = allPreview[j];
-        html += '<img src="' + escapeHtml(game.icon) + '" alt="' + escapeHtml(game.name) + '" class="category-preview-icon" onerror="this.style.display=\'none\'">';
-    }
-    
-    if (allCount > 4) {
-        html += '<div class="category-preview-more">+' + (allCount - 4) + '</div>';
-    }
-    
     html += '</div>';
     html += '</a>';
     
