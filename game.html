@@ -1,0 +1,121 @@
+<!-- game.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading Game... - moyaimoment</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/game.css">
+    
+    <!-- Ruffle for Flash games -->
+    <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="site-title">moyaimoment</a>
+            
+            <nav class="nav">
+                <!-- Games Dropdown -->
+                <div class="dropdown">
+                    <button class="nav-btn dropdown-toggle">
+                        Games
+                        <span class="arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="games-dropdown">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+                
+                <!-- Random Button -->
+                <button class="nav-btn" id="random-btn">Random</button>
+                
+                <!-- More Dropdown -->
+                <div class="dropdown">
+                    <button class="nav-btn dropdown-toggle">
+                        More
+                        <span class="arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="more-dropdown">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="game-page">
+        <!-- Loading Screen -->
+        <div class="loading-screen" id="loading-screen">
+            <div class="loader"></div>
+            <p>Loading game...</p>
+        </div>
+
+        <!-- Error Screen -->
+        <div class="error-screen" id="error-screen" style="display: none;">
+            <div class="error-icon">😕</div>
+            <h2>Game Not Found</h2>
+            <p id="error-message">The requested game could not be found.</p>
+            <a href="/" class="back-btn">Back to Games</a>
+        </div>
+
+        <!-- Game Container -->
+        <div class="game-wrapper" id="game-wrapper" style="display: none;">
+            <!-- Game Info Bar -->
+            <div class="game-info-bar">
+                <div class="game-info-left">
+                    <img src="" alt="" class="game-info-icon" id="game-info-icon">
+                    <div class="game-info-text">
+                        <h1 class="game-title" id="game-title">Game Title</h1>
+                        <p class="game-description" id="game-description">Game description goes here.</p>
+                    </div>
+                </div>
+                <div class="game-info-right">
+                    <button class="control-btn" id="fullscreen-btn" title="Fullscreen">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                            <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Game Container -->
+            <div class="game-container" id="game-container">
+                <!-- Flash Game Container -->
+                <div id="flash-container" class="player-container" style="display: none;">
+                    <div id="ruffle-player"></div>
+                </div>
+
+                <!-- Gameboy Container -->
+                <div id="gameboy-container" class="player-container" style="display: none;">
+                    <div id="emulator-container"></div>
+                </div>
+
+                <!-- HTML5 Container -->
+                <div id="html5-container" class="player-container" style="display: none;">
+                    <iframe id="html5-frame" src="" frameborder="0" allowfullscreen></iframe>
+                </div>
+            </div>
+
+            <!-- Controls Help -->
+            <div class="controls-help" id="controls-help">
+                <!-- Populated based on game type -->
+            </div>
+        </div>
+    </main>
+
+    <!-- EmulatorJS -->
+    <script>
+        // EmulatorJS configuration - will be set dynamically
+        var EJS_player = '#emulator-container';
+        var EJS_core = '';
+        var EJS_gameUrl = '';
+        var EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
+        var EJS_color = '#4a9eff';
+        var EJS_startOnLoaded = true;
+    </script>
+    
+    <script src="js/game.js"></script>
+</body>
+</html>
