@@ -336,19 +336,22 @@
 }
 
 .suggested-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    display: flex;
     gap: 1rem;
+    justify-content: flex-start;
 }
 
 .suggested-card {
     position: relative;
-    aspect-ratio: 1;
+    width: 120px;
+    height: 120px;
+    min-width: 120px;
     border-radius: 10px;
     overflow: hidden;
     cursor: pointer;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     text-decoration: none;
+    flex-shrink: 0;
 }
 
 .suggested-card:hover {
@@ -458,6 +461,16 @@
     .suggested-grid {
         grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     }
+
+    .suggested-card {
+        width: 100px;
+        height: 100px;
+        min-width: 100px;
+    }
+    
+    .suggested-card-name {
+        font-size: 0.75rem;
+    }
 }
 
 @media (max-width: 480px) {
@@ -479,12 +492,21 @@
         padding: 0.3rem 0.6rem;
     }
     
+    .suggested-games {
+        padding: 1rem;
+    }
+    
     .suggested-grid {
-        grid-template-columns: repeat(3, 1fr);
         gap: 0.75rem;
     }
     
+    .suggested-card {
+        width: 80px;
+        height: 80px;
+        min-width: 80px;
+    }
+    
     .suggested-card-name {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
     }
 }

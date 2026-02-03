@@ -5,6 +5,7 @@ var currentGame = null;
 var emulatorLoaded = false;
 var rufflePlayer = null;
 var isMuted = false;
+var suggestedGames = [];
 
 // Get game ID from URL
 function getGameIdFromUrl() {
@@ -125,24 +126,77 @@ function getRandomGames(count) {
     return availableGames.slice(0, count);
 }
 
-// Render suggested games
+// Calculate how many games can fit in one row
+function calculateGamesPerRow() {
+    var container = document.getElementById('suggested-grid');
+    if (!container) return 6; // Default fallback
+    
+    var containerWidth = container.offsetWidth;
+    
+    // Card min-width is 120px, gap is 1rem (16px)
+    var cardMinWidth = 120;
+    var gap = 16;
+    
+    // Calculate how many cards can fit
+    // Formula: (containerWidth + gap) / (cardMinWidth + gap)
+    var count = Math.floor((containerWidth + gap) / (cardMinWidth + gap));
+    
+    // Ensure at least 2 and at most 8
+    if (count < 2) count = 2;
+    if (count > 8) count = 8;
+    
+    // Also limit by available games
+    if (gamesData && gamesData.games) {
+        var availableCount = gamesData.games.length - 1; // Exclude current game
+        if (count > availableCount) count = availableCount;
+    }
+    
+    return count;
+}
+
+// Prepare suggested games (shuffle once)
+function prepareSuggestedGames() {
+    if (!gamesData || !currentGame) return;
+    
+    // Get all games except current, shuffled
+    var availableGames = [];
+    
+    for (var i = 0; i < gamesData.games.length; i++) {
+        if (gamesData.games[i].id !== currentGame.id) {
+            availableGames.push(gamesData.games[i]);
+        }
+    }
+    
+    // Shuffle array
+    for (var i = availableGames.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var temp = availableGames[i];
+        availableGames[i] = availableGames[j];
+        availableGames[j] = temp;
+    }
+    
+    suggestedGames = availableGames;
+}
+
+// Render suggested games based on container width
 function renderSuggestedGames() {
     var container = document.getElementById('suggested-grid');
     var section = document.getElementById('suggested-games');
     
     if (!container || !section) return;
     
-    var suggestedGames = getRandomGames(7);
-    
     if (suggestedGames.length === 0) {
         section.style.display = 'none';
         return;
     }
     
+    var count = calculateGamesPerRow();
+    var gamesToShow = suggestedGames.slice(0, count);
+    
     var html = '';
     
-    for (var i = 0; i < suggestedGames.length; i++) {
-        var game = suggestedGames[i];
+    for (var i = 0; i < gamesToShow.length; i++) {
+        var game = gamesToShow[i];
         html += '<a href="game.html?game=' + escapeHtml(game.id) + '" class="suggested-card" title="' + escapeHtml(game.name) + '">';
         html += '<img src="' + escapeHtml(game.icon) + '" alt="' + escapeHtml(game.name) + '" class="suggested-card-icon" onerror="this.src=\'images/placeholder.png\'">';
         html += '<div class="suggested-card-overlay">';
@@ -153,6 +207,19 @@ function renderSuggestedGames() {
     
     container.innerHTML = html;
     section.style.display = 'block';
+}
+
+// Debounce function for resize
+function debounce(func, wait) {
+    var timeout;
+    return function() {
+        var context = this;
+        var args = arguments;
+        clearTimeout(timeout);
+        timeout = setTimeout(function() {
+            func.apply(context, args);
+        }, wait);
+    };
 }
 
 // Load the game based on URL parameter
@@ -217,8 +284,13 @@ function loadGame() {
             showError('Unknown game type: ' + currentGame.type);
     }
     
-    // Render suggested games
-    renderSuggestedGames();
+    // Prepare and render suggested games
+    prepareSuggestedGames();
+    
+    // Use setTimeout to ensure the container has been rendered and has width
+    setTimeout(function() {
+        renderSuggestedGames();
+    }, 100);
 }
 
 // Load Flash game with Ruffle
@@ -367,18 +439,16 @@ function toggleMute() {
     var iframe = document.getElementById('html5-frame');
     if (iframe && iframe.contentWindow) {
         try {
-            // Try to mute videos in iframe
             var videos = iframe.contentDocument.querySelectorAll('video, audio');
             for (var i = 0; i < videos.length; i++) {
                 videos[i].muted = isMuted;
             }
         } catch (e) {
-            // Cross-origin restriction, can't access iframe content
             console.log('Could not mute iframe content (cross-origin):', e);
         }
     }
     
-    // EmulatorJS muting - try to find the emulator instance
+    // EmulatorJS muting
     if (window.EJS_emulator) {
         try {
             if (isMuted) {
@@ -523,6 +593,13 @@ function cleanup() {
     }
 }
 
+// Debounced resize handler for suggested games
+var debouncedRenderSuggested = debounce(function() {
+    if (suggestedGames.length > 0) {
+        renderSuggestedGames();
+    }
+}, 250);
+
 // Event listeners
 document.addEventListener('DOMContentLoaded', function() {
     loadGamesData();
@@ -532,8 +609,38 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('random-btn').addEventListener('click', goToRandomGame);
 });
 
+// Handle window resize
+window.addEventListener('resize', debouncedRenderSuggested);
+
 // Handle page unload
 window.addEventListener('beforeunload', cleanup);
 window.addEventListener('pagehide', cleanup);
 
 // Handle back/forward
+window.addEventListener('pageshow', function(event) {
+    if (event.persisted) {
+        resetDropdowns();
+    }
+});
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.dropdown')) {
+        resetDropdowns();
+    }
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'F11') {
+        e.preventDefault();
+        toggleFullscreen();
+    }
+    
+    // M key to toggle mute
+    if (e.key === 'm' || e.key === 'M') {
+        if (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+            toggleMute();
+        }
+    }
+});
