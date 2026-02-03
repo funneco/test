@@ -143,16 +143,6 @@ function renderCategories() {
         html += '<a href="/?category=' + encodeURIComponent(category) + '" class="category-card">';
         html += '<div class="category-name">' + escapeHtml(category) + '</div>';
         html += '<div class="category-count">' + count + ' game' + (count !== 1 ? 's' : '') + '</div>';
-        html += '<div class="category-preview">';
-        
-        for (var j = 0; j < Math.min(previewGames.length, 4); j++) {
-            var game = previewGames[j];
-            html += '<img src="' + escapeHtml(game.icon) + '" alt="' + escapeHtml(game.name) + '" class="category-preview-icon" onerror="this.style.display=\'none\'">';
-        }
-        
-        if (count > 4) {
-            html += '<div class="category-preview-more">+' + (count - 4) + '</div>';
-        }
         
         html += '</div>';
         html += '</a>';
