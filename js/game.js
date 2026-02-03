@@ -132,7 +132,7 @@ function renderSuggestedGames() {
     
     if (!container || !section) return;
     
-    var suggestedGames = getRandomGames(6);
+    var suggestedGames = getRandomGames(7);
     
     if (suggestedGames.length === 0) {
         section.style.display = 'none';
