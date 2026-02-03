@@ -1,42 +1,52 @@
-<html><head>
-  <link rel="icon" type="image/png" href="/grin.png">
-  <title>test.funne.xyz</title>
-  <meta property="og:image" content="/grin.png">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta property="og:type" content="website" />
-  <meta property="og:title" content="test.funne.xyz" />
-  <meta property="og:site_name" content="test.funne.xyz">
-  <meta property="og:url" content="https://test.funny.xyz">
-  <meta property="og:image:type" content="image/png">
-  <meta property="og:description" content="test grin.">
-  <meta name="description" content="test grin.">
-  <link rel="stylesheet" href="/index.css">
-  <script src="/index.js"></script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>moyaimoment</title>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-  <div class="audio-player" id="audio-player-container">
-    <div class="audio-symbol" id="audio-symbol">🔊</div>
-    <div class="audio-content" id="audio-content">
-      <div class="track-info">Now Playing: <span id="track-title">Loading....</span></div>
-      <div class="progress-bar-container" id="progress-bar-container">
-        <div class="progress-bar-fill" id="progress-bar-fill"></div>
-      </div>
-      <div class="time-info">
-        <span id="current-time"></span> / <span id="total-time"></span>
-      </div>
-      <div class="controls">
-        <button id="prev-btn">«</button>
-        <button id="play-pause-btn">►</button>
-        <button id="next-btn">»</button>
-      </div>
-    </div>
-  </div>
-  <button class="corner-button">
-    <a href="https://tenor.com/users/trueemoji">
-      <img src="/true.png">
-    </a>
-  </button>
-  <div class="floating-container">
-    <img class="glowing-image" src="/grin.png">
-  </div>
-</body></html>
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="site-title">moyaimoment</a>
+            
+            <nav class="nav">
+                <!-- Games Dropdown -->
+                <div class="dropdown">
+                    <button class="nav-btn dropdown-toggle">
+                        Games
+                        <span class="arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="games-dropdown">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+                
+                <!-- Random Button -->
+                <button class="nav-btn" id="random-btn">Random</button>
+                
+                <!-- More Dropdown -->
+                <div class="dropdown">
+                    <button class="nav-btn dropdown-toggle">
+                        More
+                        <span class="arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="more-dropdown">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="current-category" id="current-category">All Games</div>
+        <div class="games-grid" id="games-grid">
+            <!-- Games populated by JavaScript -->
+        </div>
+    </main>
+
+    <script src="js/script.js"></script>
+</body>
+</html>

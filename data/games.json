@@ -1,0 +1,55 @@
+{
+  "categories": [
+    "All",
+    "HTML5",
+    "Flash",
+    "Gameboy",
+    "Riddle School"
+  ],
+  "moreLinks": [
+    {
+      "name": "Updates",
+      "url": "/updates.html"
+    },
+    {
+      "name": "Game Suggestion Form",
+      "url": "https://forms.google.com/your-form"
+    },
+    {
+      "name": "Bug Reports Form",
+      "url": "https://forms.google.com/your-form"
+    }
+  ],
+  "games": [
+    {
+      "name": "Example Game 1",
+      "icon": "images/games/game1.png",
+      "url": "/games/game1/index.html",
+      "categories": ["HTML5"]
+    },
+    {
+      "name": "Riddle School 1",
+      "icon": "images/games/riddle1.png",
+      "url": "/games/riddle1/index.html",
+      "categories": ["Flash", "Riddle School"]
+    },
+    {
+      "name": "Pokemon Red",
+      "icon": "images/games/pokemon-red.png",
+      "url": "/games/pokemon-red/index.html",
+      "categories": ["Gameboy"]
+    },
+    {
+      "name": "Cool HTML5 Game",
+      "icon": "images/games/cool-game.png",
+      "url": "/games/cool-game/index.html",
+      "categories": ["HTML5"]
+    },
+    {
+      "name": "Riddle School 2",
+      "icon": "images/games/riddle2.png",
+      "url": "/games/riddle2/index.html",
+      "categories": ["Flash", "Riddle School"]
+    }
+  ]
+}
