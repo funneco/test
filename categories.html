@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categories - moyaimoment</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/categories.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="site-title">moyaimoment</a>
+            
+            <nav class="nav">
+                <!-- Games Dropdown -->
+                <div class="dropdown">
+                    <button class="nav-btn dropdown-toggle">
+                        Games
+                        <span class="arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="games-dropdown">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+                
+                <!-- Random Button -->
+                <button class="nav-btn" id="random-btn">Random</button>
+                
+                <!-- More Dropdown -->
+                <div class="dropdown">
+                    <button class="nav-btn dropdown-toggle">
+                        More
+                        <span class="arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="more-dropdown">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="page-header">
+            <h1 class="page-title">Categories</h1>
+            <p class="page-subtitle">Browse games by category</p>
+        </div>
+        
+        <div class="categories-grid" id="categories-grid">
+            <!-- Loading state -->
+            <div class="loading">Loading categories...</div>
+        </div>
+    </main>
+
+    <script src="js/categories.js"></script>
+</body>
+</html>

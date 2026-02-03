@@ -18,7 +18,7 @@ async function loadGamesData() {
         
         // Check for category in URL
         const urlCategory = getCategoryFromUrl();
-        if (gamesData.categories.includes(urlCategory)) {
+        if (urlCategory === 'All' || gamesData.categories.includes(urlCategory)) {
             renderGames(urlCategory);
         } else {
             renderGames('All');
@@ -32,21 +32,27 @@ async function loadGamesData() {
 
 // Initialize dropdown menus from JSON data
 function initializeDropdowns() {
-    // Games dropdown
+    // Games dropdown - Now just has All and Categories
     const gamesDropdown = document.getElementById('games-dropdown');
     gamesDropdown.innerHTML = '';
     
-    gamesData.categories.forEach(category => {
-        const item = document.createElement('button');
-        item.className = 'dropdown-item';
-        item.textContent = category;
-        item.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            filterByCategory(category);
-        });
-        gamesDropdown.appendChild(item);
+    // All Games link
+    const allItem = document.createElement('a');
+    allItem.className = 'dropdown-item';
+    allItem.textContent = 'All';
+    allItem.href = '/';
+    allItem.addEventListener('click', function(e) {
+        e.preventDefault();
+        filterByCategory('All');
     });
+    gamesDropdown.appendChild(allItem);
+    
+    // Categories link
+    const categoriesItem = document.createElement('a');
+    categoriesItem.className = 'dropdown-item';
+    categoriesItem.textContent = 'Categories';
+    categoriesItem.href = 'categories.html';
+    gamesDropdown.appendChild(categoriesItem);
     
     // More dropdown
     const moreDropdown = document.getElementById('more-dropdown');
@@ -90,15 +96,15 @@ function renderGames(category) {
     // Update URL without reload
     const newUrl = category === 'All' 
         ? window.location.pathname 
-        : `${window.location.pathname}?category=${encodeURIComponent(category)}`;
+        : window.location.pathname + '?category=' + encodeURIComponent(category);
     window.history.replaceState({}, '', newUrl);
     
     // Filter games by category
     let filteredGames = gamesData.games;
     if (category !== 'All') {
-        filteredGames = gamesData.games.filter(game => 
-            game.categories.includes(category)
-        );
+        filteredGames = gamesData.games.filter(function(game) {
+            return game.categories.includes(category);
+        });
     }
     
     // Check if no games found
@@ -108,20 +114,17 @@ function renderGames(category) {
     }
     
     // Render game cards
-    grid.innerHTML = filteredGames.map(game => `
-        <a href="game.html?game=${game.id}" class="game-card" title="${game.name}">
-            <img 
-                src="${game.icon}" 
-                alt="${game.name}" 
-                class="game-icon"
-                loading="lazy"
-                onerror="this.src='images/placeholder.png'"
-            >
-            <div class="game-overlay">
-                <span class="game-name">${game.name}</span>
-            </div>
-        </a>
-    `).join('');
+    let html = '';
+    for (let i = 0; i < filteredGames.length; i++) {
+        const game = filteredGames[i];
+        html += '<a href="game.html?game=' + game.id + '" class="game-card" title="' + escapeHtml(game.name) + '">';
+        html += '<img src="' + escapeHtml(game.icon) + '" alt="' + escapeHtml(game.name) + '" class="game-icon" loading="lazy" onerror="this.src=\'images/placeholder.png\'">';
+        html += '<div class="game-overlay">';
+        html += '<span class="game-name">' + escapeHtml(game.name) + '</span>';
+        html += '</div>';
+        html += '</a>';
+    }
+    grid.innerHTML = html;
 }
 
 // Filter games by category
@@ -137,21 +140,25 @@ function goToRandomGame() {
     
     const randomIndex = Math.floor(Math.random() * gamesData.games.length);
     const randomGame = gamesData.games[randomIndex];
-    window.location.href = `game.html?game=${randomGame.id}`;
+    window.location.href = 'game.html?game=' + randomGame.id;
+}
+
+// Escape HTML to prevent XSS
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // Initialize the page
 function initializePage() {
-    // Reset any stuck states
     resetDropdowns();
     
-    // Load data if not already loaded
     if (!gamesData) {
         loadGamesData();
     } else {
-        // Data already loaded, just re-render based on URL
         const urlCategory = getCategoryFromUrl();
-        if (gamesData.categories.includes(urlCategory)) {
+        if (urlCategory === 'All' || gamesData.categories.includes(urlCategory)) {
             renderGames(urlCategory);
         } else {
             renderGames('All');
@@ -160,24 +167,20 @@ function initializePage() {
 }
 
 // Event Listeners
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
     initializePage();
     
-    // Random button
     document.getElementById('random-btn').addEventListener('click', goToRandomGame);
 });
 
 // Handle back/forward button (bfcache restoration)
-window.addEventListener('pageshow', (event) => {
-    // If page is restored from bfcache
+window.addEventListener('pageshow', function(event) {
     if (event.persisted) {
-        console.log('Page restored from bfcache');
         resetDropdowns();
         
-        // Re-initialize if needed
         if (gamesData) {
             const urlCategory = getCategoryFromUrl();
-            if (gamesData.categories.includes(urlCategory)) {
+            if (urlCategory === 'All' || gamesData.categories.includes(urlCategory)) {
                 renderGames(urlCategory);
             } else {
                 renderGames('All');
@@ -188,12 +191,12 @@ window.addEventListener('pageshow', (event) => {
     }
 });
 
-// Also handle popstate for SPA-like navigation
-window.addEventListener('popstate', () => {
+// Handle popstate for navigation
+window.addEventListener('popstate', function() {
     resetDropdowns();
     if (gamesData) {
         const urlCategory = getCategoryFromUrl();
-        if (gamesData.categories.includes(urlCategory)) {
+        if (urlCategory === 'All' || gamesData.categories.includes(urlCategory)) {
             renderGames(urlCategory);
         } else {
             renderGames('All');
@@ -202,14 +205,14 @@ window.addEventListener('popstate', () => {
 });
 
 // Close dropdowns when clicking outside
-document.addEventListener('click', (e) => {
+document.addEventListener('click', function(e) {
     if (!e.target.closest('.dropdown')) {
         resetDropdowns();
     }
 });
 
-// Handle visibility change (tab switching)
-document.addEventListener('visibilitychange', () => {
+// Handle visibility change
+document.addEventListener('visibilitychange', function() {
     if (document.visibilityState === 'visible') {
         resetDropdowns();
     }

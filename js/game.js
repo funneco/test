@@ -25,25 +25,34 @@ async function loadGamesData() {
 }
 
 // Initialize dropdown menus
+// Initialize dropdown menus
 function initializeDropdowns() {
     // Games dropdown
     const gamesDropdown = document.getElementById('games-dropdown');
     if (gamesDropdown) {
         gamesDropdown.innerHTML = '';
-        gamesData.categories.forEach(category => {
-            const item = document.createElement('a');
-            item.className = 'dropdown-item';
-            item.textContent = category;
-            item.href = `/?category=${encodeURIComponent(category)}`;
-            gamesDropdown.appendChild(item);
-        });
+        
+        // All Games link
+        const allItem = document.createElement('a');
+        allItem.className = 'dropdown-item';
+        allItem.textContent = 'All';
+        allItem.href = '/';
+        gamesDropdown.appendChild(allItem);
+        
+        // Categories link
+        const categoriesItem = document.createElement('a');
+        categoriesItem.className = 'dropdown-item';
+        categoriesItem.textContent = 'Categories';
+        categoriesItem.href = 'categories.html';
+        gamesDropdown.appendChild(categoriesItem);
     }
     
     // More dropdown
     const moreDropdown = document.getElementById('more-dropdown');
     if (moreDropdown) {
         moreDropdown.innerHTML = '';
-        gamesData.moreLinks.forEach(link => {
+        
+        gamesData.moreLinks.forEach(function(link) {
             const item = document.createElement('a');
             item.className = 'dropdown-item';
             item.textContent = link.name;
