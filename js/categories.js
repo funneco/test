@@ -118,7 +118,6 @@ function renderCategories() {
     html += '<a href="/" class="category-card">';
     html += '<div class="category-name">All Games</div>';
     html += '<div class="category-count">' + allCount + ' game' + (allCount !== 1 ? 's' : '') + '</div>';
-    html += '<div class="category-preview">';
     
     for (var j = 0; j < Math.min(allPreview.length, 4); j++) {
         var game = allPreview[j];
