@@ -100,17 +100,22 @@ body {
     opacity: 0;
     visibility: hidden;
     transform: translateY(-10px);
-    transition: all 0.3s ease;
+    transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
     overflow: hidden;
+    z-index: 1001;
+    pointer-events: none;
 }
 
-.dropdown:hover .dropdown-menu {
+.dropdown:hover .dropdown-menu,
+.dropdown:focus-within .dropdown-menu {
     opacity: 1;
     visibility: visible;
     transform: translateY(0);
+    pointer-events: auto;
 }
 
-.dropdown:hover .arrow {
+.dropdown:hover .arrow,
+.dropdown:focus-within .arrow {
     transform: rotate(180deg);
 }
 
@@ -126,12 +131,19 @@ body {
     width: 100%;
     text-align: left;
     font-size: 1rem;
+    font-family: inherit;
 }
 
-.dropdown-item:hover {
+.dropdown-item:hover,
+.dropdown-item:focus {
     background-color: var(--accent);
+    outline: none;
 }
-
+/* Make dropdown buttons focusable for accessibility */
+.dropdown-toggle:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
 /* Main Content */
 .main-content {
     max-width: 1400px;
@@ -245,7 +257,8 @@ body {
         transform: translateX(-50%) translateY(-10px);
     }
     
-    .dropdown:hover .dropdown-menu {
+    .dropdown:hover .dropdown-menu,
+    .dropdown:focus-within .dropdown-menu {
         transform: translateX(-50%) translateY(0);
     }
 }

@@ -3,6 +3,7 @@
 let gamesData = null;
 let currentGame = null;
 let emulatorLoaded = false;
+let rufflePlayer = null;
 
 // Get game ID from URL
 function getGameIdFromUrl() {
@@ -115,28 +116,65 @@ function loadGame() {
     showControlsHelp(currentGame.type);
 }
 
-// Load Flash game with Ruffle
+// Load Flash game with Ruffle - FIXED
 function loadFlashGame(game) {
     const container = document.getElementById('flash-container');
     const gameContainer = document.getElementById('game-container');
-    const rufflePlayer = document.getElementById('ruffle-player');
+    const ruffleContainer = document.getElementById('ruffle-player');
     
-    container.style.display = 'block';
+    // Show container and set aspect ratio
+    container.style.display = 'flex';
     gameContainer.classList.add('flash-aspect');
     
-    // Wait for Ruffle to be ready
-    const ruffle = window.RufflePlayer.newest();
-    const player = ruffle.createPlayer();
+    // Clear any existing content
+    ruffleContainer.innerHTML = '';
     
-    player.style.width = '100%';
-    player.style.height = '100%';
+    // Check if Ruffle is available
+    if (typeof window.RufflePlayer === 'undefined') {
+        console.error('Ruffle is not loaded');
+        showError('Flash player (Ruffle) failed to load. Please refresh the page.');
+        return;
+    }
     
-    rufflePlayer.appendChild(player);
-    
-    player.load(game.file).catch(error => {
-        console.error('Error loading Flash game:', error);
-        showError('Failed to load Flash game. The file may be missing or corrupted.');
-    });
+    // Wait a moment for the container to have dimensions
+    setTimeout(() => {
+        try {
+            const ruffle = window.RufflePlayer.newest();
+            const player = ruffle.createPlayer();
+            
+            // Set player dimensions
+            player.style.width = '100%';
+            player.style.height = '100%';
+            
+            // Add player to container
+            ruffleContainer.appendChild(player);
+            
+            // Configure and load the game
+            player.load({
+                url: game.file,
+                autoplay: "on",
+                unmuteOverlay: "hidden",
+                backgroundColor: "#000000",
+                letterbox: "on",
+                warnOnUnsupportedContent: false,
+                contextMenu: "on",
+                preloader: true,
+                splashScreen: false
+            }).then(() => {
+                console.log('Flash game loaded successfully');
+            }).catch(error => {
+                console.error('Error loading Flash game:', error);
+                showError('Failed to load Flash game. The file may be missing or corrupted.');
+            });
+            
+            // Store reference for cleanup
+            rufflePlayer = player;
+            
+        } catch (error) {
+            console.error('Error creating Ruffle player:', error);
+            showError('Failed to initialize Flash player. Please try again.');
+        }
+    }, 100);
 }
 
 // Load emulator game with EmulatorJS
@@ -164,9 +202,9 @@ function loadEmulatorGame(game) {
     
     const core = coreMap[game.type] || 'gambatte';
     
-    // Create EmulatorJS configuration
+    // Clear any existing content
     const emulatorContainer = document.getElementById('emulator-container');
-    emulatorContainer.innerHTML = ''; // Clear any existing content
+    emulatorContainer.innerHTML = '';
     
     // Set up EmulatorJS
     window.EJS_player = '#emulator-container';
@@ -214,6 +252,7 @@ function showControlsHelp(type) {
                 <div class="control-item"><span class="key">Click</span><span>Select / Action</span></div>
                 <div class="control-item"><span class="key">Arrows</span><span>Move (if applicable)</span></div>
                 <div class="control-item"><span class="key">Space</span><span>Action (if applicable)</span></div>
+                <div class="control-item"><span class="key">Right Click</span><span>Ruffle Menu</span></div>
             `;
             break;
         case 'gb':
@@ -224,7 +263,6 @@ function showControlsHelp(type) {
                 <div class="control-item"><span class="key">X</span><span>B Button</span></div>
                 <div class="control-item"><span class="key">Enter</span><span>Start</span></div>
                 <div class="control-item"><span class="key">Shift</span><span>Select</span></div>
-                <div class="control-item"><span class="key">F11</span><span>Fullscreen</span></div>
             `;
             break;
         case 'gba':
@@ -298,7 +336,7 @@ function showError(message) {
 function toggleFullscreen() {
     const container = document.getElementById('game-container');
     
-    if (!document.fullscreenElement) {
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
         if (container.requestFullscreen) {
             container.requestFullscreen();
         } else if (container.webkitRequestFullscreen) {
@@ -326,6 +364,27 @@ function goToRandomGame() {
     window.location.href = `game.html?game=${randomGame.id}`;
 }
 
+// Reset dropdowns
+function resetDropdowns() {
+    document.querySelectorAll('.dropdown-menu').forEach(menu => {
+        menu.style.opacity = '';
+        menu.style.visibility = '';
+        menu.style.transform = '';
+    });
+}
+
+// Cleanup when leaving page
+function cleanup() {
+    if (rufflePlayer) {
+        try {
+            rufflePlayer.remove();
+        } catch (e) {
+            console.log('Cleanup error:', e);
+        }
+        rufflePlayer = null;
+    }
+}
+
 // Event listeners
 document.addEventListener('DOMContentLoaded', () => {
     loadGamesData();
@@ -337,9 +396,26 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('random-btn').addEventListener('click', goToRandomGame);
 });
 
+// Handle page unload
+window.addEventListener('beforeunload', cleanup);
+window.addEventListener('pagehide', cleanup);
+
+// Handle back/forward
+window.addEventListener('pageshow', (event) => {
+    if (event.persisted) {
+        resetDropdowns();
+    }
+});
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.dropdown')) {
+        resetDropdowns();
+    }
+});
+
 // Keyboard shortcuts
 document.addEventListener('keydown', (e) => {
-    // F11 for fullscreen
     if (e.key === 'F11') {
         e.preventDefault();
         toggleFullscreen();

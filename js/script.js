@@ -40,7 +40,11 @@ function initializeDropdowns() {
         const item = document.createElement('button');
         item.className = 'dropdown-item';
         item.textContent = category;
-        item.addEventListener('click', () => filterByCategory(category));
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            filterByCategory(category);
+        });
         gamesDropdown.appendChild(item);
     });
     
@@ -58,6 +62,19 @@ function initializeDropdowns() {
             item.rel = 'noopener noreferrer';
         }
         moreDropdown.appendChild(item);
+    });
+}
+
+// Reset all dropdown states
+function resetDropdowns() {
+    document.querySelectorAll('.dropdown-menu').forEach(menu => {
+        menu.style.opacity = '';
+        menu.style.visibility = '';
+        menu.style.transform = '';
+    });
+    
+    document.querySelectorAll('.dropdown .arrow').forEach(arrow => {
+        arrow.style.transform = '';
     });
 }
 
@@ -90,7 +107,7 @@ function renderGames(category) {
         return;
     }
     
-    // Render game cards - UPDATED to link to game.html with game ID
+    // Render game cards
     grid.innerHTML = filteredGames.map(game => `
         <a href="game.html?game=${game.id}" class="game-card" title="${game.name}">
             <img 
@@ -110,10 +127,11 @@ function renderGames(category) {
 // Filter games by category
 function filterByCategory(category) {
     renderGames(category);
+    resetDropdowns();
     document.activeElement.blur();
 }
 
-// Random game button - UPDATED
+// Random game button
 function goToRandomGame() {
     if (!gamesData || gamesData.games.length === 0) return;
     
@@ -122,20 +140,77 @@ function goToRandomGame() {
     window.location.href = `game.html?game=${randomGame.id}`;
 }
 
+// Initialize the page
+function initializePage() {
+    // Reset any stuck states
+    resetDropdowns();
+    
+    // Load data if not already loaded
+    if (!gamesData) {
+        loadGamesData();
+    } else {
+        // Data already loaded, just re-render based on URL
+        const urlCategory = getCategoryFromUrl();
+        if (gamesData.categories.includes(urlCategory)) {
+            renderGames(urlCategory);
+        } else {
+            renderGames('All');
+        }
+    }
+}
+
 // Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
-    loadGamesData();
+    initializePage();
     
     // Random button
     document.getElementById('random-btn').addEventListener('click', goToRandomGame);
 });
 
+// Handle back/forward button (bfcache restoration)
+window.addEventListener('pageshow', (event) => {
+    // If page is restored from bfcache
+    if (event.persisted) {
+        console.log('Page restored from bfcache');
+        resetDropdowns();
+        
+        // Re-initialize if needed
+        if (gamesData) {
+            const urlCategory = getCategoryFromUrl();
+            if (gamesData.categories.includes(urlCategory)) {
+                renderGames(urlCategory);
+            } else {
+                renderGames('All');
+            }
+        } else {
+            loadGamesData();
+        }
+    }
+});
+
+// Also handle popstate for SPA-like navigation
+window.addEventListener('popstate', () => {
+    resetDropdowns();
+    if (gamesData) {
+        const urlCategory = getCategoryFromUrl();
+        if (gamesData.categories.includes(urlCategory)) {
+            renderGames(urlCategory);
+        } else {
+            renderGames('All');
+        }
+    }
+});
+
 // Close dropdowns when clicking outside
 document.addEventListener('click', (e) => {
     if (!e.target.closest('.dropdown')) {
-        document.querySelectorAll('.dropdown-menu').forEach(menu => {
-            menu.style.opacity = '0';
-            menu.style.visibility = 'hidden';
-        });
+        resetDropdowns();
+    }
+});
+
+// Handle visibility change (tab switching)
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        resetDropdowns();
     }
 });

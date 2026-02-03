@@ -7,9 +7,6 @@
     <title>Loading Game... - moyaimoment</title>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/game.css">
-    
-    <!-- Ruffle for Flash games -->
-    <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
 </head>
 <body>
     <header class="header">
@@ -105,9 +102,11 @@
         </div>
     </main>
 
-    <!-- EmulatorJS -->
+    <!-- Ruffle - Load BEFORE game.js -->
+    <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
+    
+    <!-- EmulatorJS Config -->
     <script>
-        // EmulatorJS configuration - will be set dynamically
         var EJS_player = '#emulator-container';
         var EJS_core = '';
         var EJS_gameUrl = '';
