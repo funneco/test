@@ -3,13 +3,26 @@
 let gamesData = null;
 let currentCategory = 'All';
 
+// Get category from URL if present
+function getCategoryFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('category') || 'All';
+}
+
 // Fetch games data from JSON
 async function loadGamesData() {
     try {
         const response = await fetch('data/games.json');
         gamesData = await response.json();
         initializeDropdowns();
-        renderGames('All');
+        
+        // Check for category in URL
+        const urlCategory = getCategoryFromUrl();
+        if (gamesData.categories.includes(urlCategory)) {
+            renderGames(urlCategory);
+        } else {
+            renderGames('All');
+        }
     } catch (error) {
         console.error('Error loading games data:', error);
         document.getElementById('games-grid').innerHTML = 
@@ -57,6 +70,12 @@ function renderGames(category) {
     // Update category display
     categoryDisplay.textContent = category === 'All' ? 'All Games' : category + ' Games';
     
+    // Update URL without reload
+    const newUrl = category === 'All' 
+        ? window.location.pathname 
+        : `${window.location.pathname}?category=${encodeURIComponent(category)}`;
+    window.history.replaceState({}, '', newUrl);
+    
     // Filter games by category
     let filteredGames = gamesData.games;
     if (category !== 'All') {
@@ -71,13 +90,14 @@ function renderGames(category) {
         return;
     }
     
-    // Render game cards
+    // Render game cards - UPDATED to link to game.html with game ID
     grid.innerHTML = filteredGames.map(game => `
-        <a href="${game.url}" class="game-card" title="${game.name}">
+        <a href="game.html?game=${game.id}" class="game-card" title="${game.name}">
             <img 
                 src="${game.icon}" 
                 alt="${game.name}" 
                 class="game-icon"
+                loading="lazy"
                 onerror="this.src='images/placeholder.png'"
             >
             <div class="game-overlay">
@@ -90,17 +110,16 @@ function renderGames(category) {
 // Filter games by category
 function filterByCategory(category) {
     renderGames(category);
-    // Close dropdown by removing focus
     document.activeElement.blur();
 }
 
-// Random game button
+// Random game button - UPDATED
 function goToRandomGame() {
     if (!gamesData || gamesData.games.length === 0) return;
     
     const randomIndex = Math.floor(Math.random() * gamesData.games.length);
     const randomGame = gamesData.games[randomIndex];
-    window.location.href = randomGame.url;
+    window.location.href = `game.html?game=${randomGame.id}`;
 }
 
 // Event Listeners
