@@ -4,6 +4,7 @@ var gamesData = null;
 var currentGame = null;
 var emulatorLoaded = false;
 var rufflePlayer = null;
+var isMuted = false;
 
 // Get game ID from URL
 function getGameIdFromUrl() {
@@ -103,6 +104,57 @@ function renderGameCategories(categories) {
     }
 }
 
+// Get random games for suggestions (excluding current game)
+function getRandomGames(count) {
+    var availableGames = [];
+    
+    for (var i = 0; i < gamesData.games.length; i++) {
+        if (gamesData.games[i].id !== currentGame.id) {
+            availableGames.push(gamesData.games[i]);
+        }
+    }
+    
+    // Shuffle array
+    for (var i = availableGames.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var temp = availableGames[i];
+        availableGames[i] = availableGames[j];
+        availableGames[j] = temp;
+    }
+    
+    return availableGames.slice(0, count);
+}
+
+// Render suggested games
+function renderSuggestedGames() {
+    var container = document.getElementById('suggested-grid');
+    var section = document.getElementById('suggested-games');
+    
+    if (!container || !section) return;
+    
+    var suggestedGames = getRandomGames(6);
+    
+    if (suggestedGames.length === 0) {
+        section.style.display = 'none';
+        return;
+    }
+    
+    var html = '';
+    
+    for (var i = 0; i < suggestedGames.length; i++) {
+        var game = suggestedGames[i];
+        html += '<a href="game.html?game=' + escapeHtml(game.id) + '" class="suggested-card" title="' + escapeHtml(game.name) + '">';
+        html += '<img src="' + escapeHtml(game.icon) + '" alt="' + escapeHtml(game.name) + '" class="suggested-card-icon" onerror="this.src=\'images/placeholder.png\'">';
+        html += '<div class="suggested-card-overlay">';
+        html += '<span class="suggested-card-name">' + escapeHtml(game.name) + '</span>';
+        html += '</div>';
+        html += '</a>';
+    }
+    
+    container.innerHTML = html;
+    section.style.display = 'block';
+}
+
 // Load the game based on URL parameter
 function loadGame() {
     var gameId = getGameIdFromUrl();
@@ -135,6 +187,15 @@ function loadGame() {
     document.getElementById('loading-screen').style.display = 'none';
     document.getElementById('game-wrapper').style.display = 'flex';
     
+    // Handle controls visibility
+    var controlsHelp = document.getElementById('controls-help');
+    if (currentGame.hideControls === true) {
+        controlsHelp.classList.add('hidden');
+    } else {
+        controlsHelp.classList.remove('hidden');
+        showControlsHelp(currentGame.type);
+    }
+    
     // Load appropriate player based on game type
     switch (currentGame.type) {
         case 'flash':
@@ -156,8 +217,8 @@ function loadGame() {
             showError('Unknown game type: ' + currentGame.type);
     }
     
-    // Show controls help
-    showControlsHelp(currentGame.type);
+    // Render suggested games
+    renderSuggestedGames();
 }
 
 // Load Flash game with Ruffle
@@ -267,6 +328,68 @@ function loadHTML5Game(game) {
     iframe.onerror = function() {
         showError('Failed to load HTML5 game. The file may be missing.');
     };
+}
+
+// Toggle mute
+function toggleMute() {
+    isMuted = !isMuted;
+    
+    var muteBtn = document.getElementById('mute-btn');
+    var iconUnmuted = document.getElementById('mute-icon-unmuted');
+    var iconMuted = document.getElementById('mute-icon-muted');
+    
+    if (isMuted) {
+        muteBtn.classList.add('muted');
+        muteBtn.title = 'Unmute';
+        iconUnmuted.style.display = 'none';
+        iconMuted.style.display = 'block';
+    } else {
+        muteBtn.classList.remove('muted');
+        muteBtn.title = 'Mute';
+        iconUnmuted.style.display = 'block';
+        iconMuted.style.display = 'none';
+    }
+    
+    // Mute Ruffle player
+    if (rufflePlayer) {
+        try {
+            if (isMuted) {
+                rufflePlayer.volume = 0;
+            } else {
+                rufflePlayer.volume = 1;
+            }
+        } catch (e) {
+            console.log('Could not change Ruffle volume:', e);
+        }
+    }
+    
+    // Mute HTML5 iframe (limited support)
+    var iframe = document.getElementById('html5-frame');
+    if (iframe && iframe.contentWindow) {
+        try {
+            // Try to mute videos in iframe
+            var videos = iframe.contentDocument.querySelectorAll('video, audio');
+            for (var i = 0; i < videos.length; i++) {
+                videos[i].muted = isMuted;
+            }
+        } catch (e) {
+            // Cross-origin restriction, can't access iframe content
+            console.log('Could not mute iframe content (cross-origin):', e);
+        }
+    }
+    
+    // EmulatorJS muting - try to find the emulator instance
+    if (window.EJS_emulator) {
+        try {
+            if (isMuted) {
+                window.EJS_emulator.setVolume(0);
+            } else {
+                window.EJS_emulator.setVolume(1);
+            }
+        } catch (e) {
+            console.log('Could not change EmulatorJS volume:', e);
+        }
+    }
 }
 
 // Show controls help based on game type
@@ -405,6 +528,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadGamesData();
     
     document.getElementById('fullscreen-btn').addEventListener('click', toggleFullscreen);
+    document.getElementById('mute-btn').addEventListener('click', toggleMute);
     document.getElementById('random-btn').addEventListener('click', goToRandomGame);
 });
 
@@ -413,23 +537,3 @@ window.addEventListener('beforeunload', cleanup);
 window.addEventListener('pagehide', cleanup);
 
 // Handle back/forward
-window.addEventListener('pageshow', function(event) {
-    if (event.persisted) {
-        resetDropdowns();
-    }
-});
-
-// Close dropdowns when clicking outside
-document.addEventListener('click', function(e) {
-    if (!e.target.closest('.dropdown')) {
-        resetDropdowns();
-    }
-});
-
-// Keyboard shortcuts
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'F11') {
-        e.preventDefault();
-        toggleFullscreen();
-    }
-});
