@@ -29,6 +29,7 @@
       "type": "flash",
       "file": "games/flash/riddle-school-1.swf",
       "description": "The original Riddle School game. Help Phil escape from school!"
+      "hideControls": true
     },
     {
       "id": "riddleschool2",
