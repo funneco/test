@@ -1,0 +1,307 @@
+body {
+  margin: 0;
+  height: 100vh;
+  height: 100dvh; 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: radial-gradient(circle at 50% 45%, #150308 0%, #050102 38%, #000 72%);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.floating-container {
+  position: fixed;
+  inset: 0;
+  transform-origin: center;
+  width: auto;
+  height: auto;
+  z-index: 2;
+  touch-action: none;
+  cursor: grab;
+}
+
+.floating-container:active {
+  cursor: grabbing;
+}
+
+.glass-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.ripple-background {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.corner-button {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  width: 50px;
+  height: 50px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  animation: float 3s ease-in-out infinite;
+  transition: transform 0.3s ease;
+  z-index: 3;
+  padding: 0;
+  touch-action: manipulation;
+}
+
+.corner-button:hover {
+  animation: none;
+  transform: scale(1.2);
+}
+
+.corner-button:active {
+  transform: scale(0.95);
+}
+
+.corner-button img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.audio-player {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(15, 15, 18, 0.72);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 15px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35), inset 0 1px rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px) saturate(130%);
+  -webkit-backdrop-filter: blur(18px) saturate(130%);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  z-index: 4;
+  overflow: hidden;
+  transition: width .32s cubic-bezier(.2,.8,.2,1), height .32s cubic-bezier(.2,.8,.2,1), border-radius .32s ease, background .2s ease;
+}
+
+.audio-player .audio-symbol {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: rgba(255,255,255,.88);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+}
+
+.audio-symbol svg { width: 21px; height: 21px; }
+
+.audio-player .audio-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  opacity: 0;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 17px;
+  pointer-events: none;
+  transform: translateY(5px);
+  transition: opacity .18s ease, transform .25s ease;
+  box-sizing: border-box;
+}
+
+.player-heading { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.player-eyebrow { color: rgba(255,255,255,.42); font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.track-title { color: rgba(255,255,255,.94); font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.progress-bar-container {
+  width: 100%;
+  height: 4px;
+  background: rgba(255,255,255,.14);
+  border-radius: 999px;
+  cursor: pointer;
+  overflow: visible;
+}
+
+.progress-bar-container:hover { background: rgba(255,255,255,.22); }
+
+.progress-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: #fff;
+  border-radius: inherit;
+  box-shadow: 0 0 12px rgba(255,255,255,.5);
+}
+
+.audio-player.expanded {
+  width: min(260px, calc(100vw - 32px));
+  height: 196px;
+  border-radius: 22px;
+  background: rgba(12, 12, 15, 0.82);
+}
+
+.audio-player.expanded .audio-symbol { opacity: 0; pointer-events: none; }
+
+.audio-player.expanded .audio-content {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+.time-info {
+  display: flex;
+  justify-content: space-between;
+  margin-top: -7px;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255,255,255,.38);
+}
+
+.volume-control {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  align-items: center;
+  gap: 9px;
+  margin-top: -5px;
+  color: rgba(255,255,255,.58);
+}
+
+.volume-icon {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
+}
+
+#volume-slider {
+  width: 100%;
+  height: 4px;
+  margin: 0;
+  accent-color: #fff;
+  cursor: pointer;
+}
+
+#volume-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.18);
+}
+
+#volume-slider::-webkit-slider-thumb {
+  width: 14px;
+  height: 14px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: #fff;
+  border: 0;
+  box-shadow: 0 0 12px rgba(255,255,255,.4);
+  -webkit-appearance: none;
+}
+
+#volume-slider::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.18);
+}
+
+#volume-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  border: 0;
+  box-shadow: 0 0 12px rgba(255,255,255,.4);
+}
+
+.controls { display: flex; align-items: center; justify-content: center; gap: 18px; }
+
+.audio-player.expanded button {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: rgba(255,255,255,.72);
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  transition: color .15s ease, background .15s ease, transform .15s ease;
+}
+
+.audio-player.expanded button:hover { color: #fff; background: rgba(255,255,255,.08); }
+.audio-player.expanded button:active { transform: scale(.9); }
+.audio-player.expanded button svg { width: 17px; height: 17px; stroke-width: 2; }
+
+.audio-player.expanded .play-button {
+  width: 42px;
+  height: 42px;
+  color: #0b0b0d;
+  background: #fff;
+}
+.audio-player.expanded .play-button:hover { color: #0b0b0d; background: rgba(255,255,255,.86); }
+.audio-player.expanded .play-button svg { width: 19px; height: 19px; fill: currentColor; }
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+@media (max-width: 768px) {
+  .corner-button {
+    width: 40px;
+    height: 40px;
+  }
+
+  .audio-player {
+    width: 44px;
+    height: 44px;
+    top: 10px;
+    left: 10px;
+  }
+  
+  .audio-player.expanded {
+    width: min(260px, calc(100vw - 20px));
+    height: 196px;
+  }
+
+}
+
+@media (max-width: 320px) {
+  .corner-button {
+    width: 35px;
+    height: 35px;
+    top: 5px;
+    right: 5px;
+  }
+
+  .audio-player.expanded {
+    width: calc(100vw - 20px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floating-container,
+  .corner-button {
+    animation: none;
+  }
+}
